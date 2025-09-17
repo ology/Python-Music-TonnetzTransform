@@ -1,11 +1,11 @@
 import sys
 sys.path.append('./src')
-from music_tonnetztransform.music_tonnetztransform import Transform
+from music_tonnetztransform.neo_riemann_tonnetz import Tonnetz
 import unittest
 
 class TestNeoRiemannianTonnetz(unittest.TestCase):
   def setUp(self):
-    self.Nrt = Transform()
+    self.Nrt = Tonnetz()
 
   def test_taskify_tokens(self):
     tasks = self.Nrt.taskify_tokens('P')
