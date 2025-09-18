@@ -29,8 +29,8 @@ class Transform:
         self.allowed = allowed if allowed is not None else ['T', 'N']
         self.transforms = transforms
         self.verbose = verbose
-        self.nrt = Tonnetz()
-        self.mdt = Device()
+        self.nrt = Tonnetz(verbose=verbose)
+        self.mdt = Device(verbose=verbose)
         self.base_chord = self._build_base_chord()
 
     def _build_base_chord(self):

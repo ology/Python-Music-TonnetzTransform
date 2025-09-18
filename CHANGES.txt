@@ -1,3 +1,6 @@
+0.1.2 2025-09-18
+    - Handle verbose.
+
 0.1.1 2025-09-18
     - Add musical examples to the readme.
 
