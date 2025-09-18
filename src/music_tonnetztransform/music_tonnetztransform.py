@@ -52,14 +52,6 @@ class Transform:
         p = pitch.Pitch(str(note) + str(octave))
         return p.midi
 
-    def _sanitize_chordname(self, notes):
-        # Placeholder: Replace with actual chord naming logic
-        # For now, just join the notes
-        return '-'.join(notes)
-
-    def _get_pitches(self):
-        return self.base_chord, self.base_chord
-
     def _build_transform(self):
         if isinstance(self.transforms, list):
             return list(self.transforms)
