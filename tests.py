@@ -265,7 +265,6 @@ class TestTransform(unittest.TestCase):
 
     # def test_example(self):
     #     from music21 import duration, chord, stream
-    #     from music_tonnetztransform import Transform
     #     from random_rhythms import Rhythm
     #     s = stream.Stream()
     #     p = stream.Part()
