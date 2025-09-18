@@ -1,6 +1,7 @@
 import sys
 sys.path.append('./src')
 from music_tonnetztransform.neo_riemann_tonnetz import Tonnetz
+from music_tonnetztransform.music_tonnetztransform import Transform
 import unittest
 
 class TestNeoRiemannianTonnetz(unittest.TestCase):
@@ -196,6 +197,49 @@ class TestNeoRiemannianTonnetz(unittest.TestCase):
       [65, 69, 71, 74],
       'C65 - F- to B-'
     )
+
+class TestTransform(unittest.TestCase):
+    def test_defaults(self):
+        t = Transform()
+        self.assertEqual(t.base_chord, [60, 64, 67])
+
+    def test_generate_default(self):
+        t = Transform()
+        self.assertEqual(len(t.generate()[0]), 4)
+
+    def test_transform_array(self):
+        t = Transform(transforms=['O','P','T2'])
+        self.assertEqual(t.generate()[0], [[60,64,67],[60,63,67],[62,65,69]])
+
+    def test_transform_integer(self):
+        t = Transform(transforms=3)
+        self.assertEqual(len(t.generate()[0]), 3)
+
+    def test_transform_base(self):
+        t = Transform(base_note='G', base_octave=5)
+        self.assertEqual(len(t.generate()[0]), 4)
+
+    def test_ISO_format(self):
+        t = Transform(format='ISO', transforms=['O'])
+        self.assertEqual(t.generate()[0][0], ['C4','E4','G4'])
+
+    def test_circular(self):
+        t = Transform(transforms=['I','P','T2'], max=4)
+        got = t.circular()[0]
+        self.assertEqual(len(got), 4)
+        self.assertEqual(got[0], [60,64,67])
+
+    def test_t_quality(self):
+        t = Transform(chord_quality='7', transforms=['I','T1','T2','T-3'])
+        got = t.generate()[0]
+        self.assertEqual(len(got), 4)
+        self.assertEqual(got, [[60,64,67,70],[61,65,68,71],[63,67,70,73],[60,64,67,70]])
+
+    def test_nro_quality(self):
+        t = Transform(chord_quality='7', transforms=['I','C32','C34','C65'])
+        got = t.generate()[0]
+        self.assertEqual(len(got), 4)
+        self.assertEqual(got, [[60,64,67,70],[61,64,67,69],[60,64,67,70],[61,64,66,70]])
 
 if __name__ == '__main__':
   unittest.main()

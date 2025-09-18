@@ -1,140 +1,146 @@
+from music21 import note, pitch
+import random
 import re
 
+import sys
+sys.path.append('./src')
+from music_tonnetztransform.neo_riemann_tonnetz import Tonnetz
+from music_melodicdevice import Device
+
 class Transform:
-  DEG_IN_SCALE = 12
+    def __init__(
+        self,
+        base_note='C',
+        base_octave=4,
+        chord_quality='', # '': major, 'm': minor, '7': ...
+        format='midinum', # or ISO for names
+        semitones=7, # transposition semitones
+        max=4, # number of circular transformations
+        allowed=None, # [T], [N], [T,N], None
+        transforms=4, # either a list or a number of computed transformations
+        verbose=False,
+    ):
+        self.base_note = base_note
+        self.base_octave = base_octave
+        self.chord_quality = chord_quality
+        self.format = format
+        self.semitones = semitones
+        self.max = max
+        self.allowed = allowed if allowed is not None else ['T', 'N']
+        self.transforms = transforms
+        self.verbose = verbose
+        self.nrt = Tonnetz()
+        self.mdt = Device()
+        self.base_chord = self._build_base_chord()
 
-  # Operations table
-  OPERATIONS = {
-    'L': {'0,3,7': {7: 1}, '0,4,7': {0: -1}},
-    'P': {'0,3,7': {3: 1}, '0,4,7': {4: -1}},
-    'R': {'0,3,7': {0: -2}, '0,4,7': {7: 2}},
-    'S23': {'0,3,6,8': {0: -1, 3: -1}, '0,2,5,8': {5: 1, 8: 1}},
-    'S32': {'0,3,6,8': {6: 1, 8: 1}, '0,2,5,8': {0: -1, 2: -1}},
-    'S34': {'0,3,6,8': {0: 1, 8: 1}, '0,2,5,8': {0: -1, 8: -1}},
-    'S43': {'0,3,6,8': {3: -1, 6: -1}, '0,2,5,8': {2: 1, 5: 1}},
-    'S56': {'0,3,6,8': {0: -1, 6: -1}, '0,2,5,8': {2: 1, 8: 1}},
-    'S65': {'0,3,6,8': {3: 1, 8: 1}, '0,2,5,8': {0: -1, 5: -1}},
-    'C32': {'0,3,6,8': {6: -1, 8: 1}, '0,2,5,8': {0: -1, 2: 1}},
-    'C34': {'0,3,6,8': {0: -1, 8: 1}, '0,2,5,8': {0: -1, 8: 1}},
-    'C65': {'0,3,6,8': {3: -1, 8: 1}, '0,2,5,8': {0: -1, 5: 1}},
-  }
-
-  # Transformation table
-  TRANSFORMATIONS = {
-    'P': 'op',
-    'R': 'op',
-    'L': 'op',
-    'N': 'RLP',
-    'S': 'LPR',
-    'H': 'LPL',
-    'S23': 'op',
-    'S32': 'op',
-    'S34': 'op',
-    'S43': 'op',
-    'S56': 'op',
-    'S65': 'op',
-    'C32': 'op',
-    'C34': 'op',
-    'C65': 'op',
-  }
-
-  def __init__(self, DEG_IN_SCALE=None):
-    self.DEG_IN_SCALE = int(DEG_IN_SCALE) if DEG_IN_SCALE is not None else self.DEG_IN_SCALE
-    if self.DEG_IN_SCALE < 2:
-      raise ValueError('degrees in scale must be greater than one')
-
-  def _apply_operation(self, token, pset_str, pset2orig):
-    if token not in self.OPERATIONS or pset_str not in self.OPERATIONS[token]:
-      raise ValueError(f"no set class [{pset_str}] for token '{token}'")
-    for i, delta in self.OPERATIONS[token][pset_str].items():
-      for pidx in pset2orig[i]:
-        pidx[0] += delta
-    new_set = []
-    for v in pset2orig.values():
-      for p in v:
-        new_set.append(p[0])
-    return sorted(new_set)
-
-  def normalize(self, pset):
-    if not pset:
-      raise ValueError('pitch set must contain something')
-    origmap = {}
-    for p in pset:
-      k = p % self.DEG_IN_SCALE
-      origmap.setdefault(k, []).append([p])
-    if len(origmap) == 1:
-      return (','.join(str(k) for k in origmap), origmap)
-    nset = sorted(origmap.keys())
-    equivs = []
-    for i in range(len(nset)):
-      equivs.append([nset[(i + j) % len(nset)] for j in range(len(nset))])
-    order = list(reversed(range(1, len(nset))))
-    normal = []
-    for i in order:
-      min_span = self.DEG_IN_SCALE
-      min_span_idx = []
-      for eidx, eq in enumerate(equivs):
-        span = (eq[i] - eq[0]) % self.DEG_IN_SCALE
-        if span < min_span:
-          min_span = span
-          min_span_idx = [eidx]
-        elif span == min_span:
-          min_span_idx.append(eidx)
-      if len(min_span_idx) == 1:
-        normal = equivs[min_span_idx[0]]
-        break
-      else:
-        equivs = [equivs[idx] for idx in min_span_idx]
-    if not normal:
-      normal = equivs[0]
-    if normal[0] != 0:
-      trans = self.DEG_IN_SCALE - normal[0]
-      newmap = {}
-      for i in normal:
-        prev = i
-        i = (i + trans) % self.DEG_IN_SCALE
-        newmap[i] = origmap[prev]
-      origmap = newmap
-      normal = [(i + trans) % self.DEG_IN_SCALE for i in normal]
-    return (','.join(str(i) for i in normal), origmap)
-
-  def taskify_tokens(self, tokens, tasks=None):
-    if tasks is None:
-      tasks = []
-    if not isinstance(tokens, (list, tuple)):
-      tokens = re.findall(r'([A-Z][a-z0-9]*)', tokens)
-    for t in tokens:
-      if t in self.TRANSFORMATIONS:
-        val = self.TRANSFORMATIONS[t]
-        if val == 'op':
-          tasks.append((t, self._apply_operation))
-        elif isinstance(val, str):
-          self.taskify_tokens(val, tasks)
+    def _build_base_chord(self):
+        if self.chord_quality == 'm':
+            intervals = [0, 3, 7]
+        elif self.chord_quality == '7':
+            intervals = [0, 4, 7, 10]
         else:
-          raise ValueError('unknown token in transformation table')
-      else:
-        raise ValueError(f"unimplemented transformation token '{t}'")
-    return tasks
+            intervals = [0, 4, 7]
+        base_midi = self._note_to_midi(self.base_note, self.base_octave)
+        return [ base_midi + i for i in intervals ]
 
-  def techno(self, measurecount=1):
-    return (['tonn', 'tz'] * (8 * measurecount))
+    def _note_to_midi(self, note, octave=None):
+        if not octave:
+            m = re.match(r'^([A-G][#b]?)(\d+)$', str(note))
+            if m:
+                note = m.group(1)
+                octave = m.group(2)
+        p = pitch.Pitch(str(note) + str(octave))
+        return p.midi
 
-  def transform(self, tokens, pset):
-    if not tokens:
-      raise ValueError('tokens must be defined')
-    if not pset:
-      raise ValueError('pitch set must contain something')
-    if isinstance(tokens, (list, tuple)) and tokens and isinstance(tokens[0], tuple):
-      tasks = tokens
-    else:
-      tasks = self.taskify_tokens(tokens)
-    new_pset = [[p] for p in pset]
-    for task in tasks:
-      norm, pset2orig = self.normalize([p[0] for p in new_pset])
-      # pset2orig: {pitch_class: [[original_pitch], ...]}
-      # We need to pass references to the original pitches so they can be mutated
-      # So we build a mapping from pitch class to list of references
-      # Already done in normalize
-      new_pset = task[1](task[0], norm, pset2orig)
-      new_pset = [[p] for p in new_pset]
-    return [p[0] for p in new_pset]
+    def _sanitize_chordname(self, notes):
+        # Placeholder: Replace with actual chord naming logic
+        # For now, just join the notes
+        return '-'.join(notes)
+
+    def _get_pitches(self):
+        return self.base_chord, self.base_chord
+
+    def _build_transform(self):
+        if isinstance(self.transforms, list):
+            return list(self.transforms)
+        elif isinstance(self.transforms, int):
+            transforms = ['O', 'I']
+            if 'T' in self.allowed:
+                transforms += [f"T{i}" for i in range(1, self.semitones + 1)]
+                transforms += [f"T-{i}" for i in range(1, self.semitones + 1)]
+            if 'N' in self.allowed:
+                if self.chord_quality == '7':
+                    transforms += [
+                        'S23', 'S32', 'S34', 'S43', 'S56', 'S65',
+                        'C32', 'C34', 'C65'
+                    ]
+                else:
+                    alphabet = ['P', 'R', 'L']
+                    transforms += alphabet
+                    from itertools import permutations
+                    transforms += [ ''.join(p) for p in permutations(alphabet, 2) ]
+                    transforms += [ ''.join(p) for p in permutations(alphabet, 3) ]
+            return [ random.choice(transforms) for _ in range(self.transforms) ]
+        else:
+            raise ValueError("Invalid transforms")
+
+    def _build_chord(self, token, pitches, notes):
+        if token == 'O':
+            chord = pitches
+        elif token == 'I':
+            chord = notes
+        elif token.startswith('T'):
+            semitones = int(token[1:])
+            chord = self.mdt.transpose(semitones, [ self._pitchname(n) for n in notes ])
+            chord = [ self._note_to_midi(c) for c in chord ]
+        else:
+            op = token
+            if len(token) > 1 and not any(c.isdigit() for c in token):
+                op = self.nrt.taskify_tokens(token)
+            chord = self.nrt.transform(op, [ pitch.Pitch(n).midi for n in notes ])
+        return chord
+
+    def _pitchname(self, midi_num):
+        n = note.Note()
+        n.pitch.midi = midi_num
+        name = n.nameWithOctave
+        name = re.sub(r'\-', 'b', name)
+        return name
+
+    def _strip_octave(self, note):
+        m = re.match(r'^([A-G][#b]?)(\d+)$', note)
+        return m.group(1) if m else note
+
+    def _rand_bool(self):
+        return random.randint(0, 1) == 1
+
+    def generate(self):
+        pitches = notes = self.base_chord
+        transforms = self._build_transform()
+        chords = []
+        generated = []
+        for i, token in enumerate(transforms, 1):
+            transformed = self._build_chord(token, pitches, notes)
+            note_names = [ self._pitchname(n) for n in transformed ]
+            chord = [ self._strip_octave(n) for n in note_names ]
+            generated.append(note_names if self.format == 'ISO' else transformed)
+            chords.append(chord)
+            notes = transformed
+        return generated, transforms, chords
+
+    def circular(self):
+        pitches = notes = self.base_chord
+        transforms = self._build_transform()
+        chords = []
+        generated = []
+        posn = 0
+        for i in range(1, self.max + 1):
+            token = transforms[posn % len(transforms)]
+            transformed = self._build_chord(token, pitches, notes)
+            note_names = [ self._pitchname(n) for n in transformed ]
+            chord = [ self._strip_octave(n) for n in note_names ]
+            generated.append(note_names if self.format == 'ISO' else transformed)
+            chords.append(chord)
+            notes = transformed
+            posn = posn + 1 if self._rand_bool() else posn - 1
+        return generated, transforms, chords
