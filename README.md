@@ -13,7 +13,7 @@ Calling the `generate()` and `circular()` methods returns three lists:
 
 The `generate()` method generates a *linear* series of transformed chords.
 
-The `circular()` method generates a *circular* series of transformed chords. This is movement around a circular list ("necklace") of chord transformations. Starting at position zero, we move randomly, forward or backward along the necklace, transforming the current chord.
+The `circular()` method generates a *circular* series of transformed chords. This describes movement around a circular list ("necklace") of chord transformations. Starting at position zero, we move randomly, forward or backward along the necklace, transforming the current chord.
 
 ## SYNOPSIS
 ```python
@@ -43,6 +43,9 @@ generated, transforms, chords = t.generate()
 
 t = Transform(format='ISO', transforms=['R','L','P'])
 generated = t.generate()[0] # [['C4', 'E4', 'A4'], ['C4', 'F4', 'A4'], ['C4', 'F4', 'G#4']]
+
+t = Transform(transforms=['R','L','P','T2'], max=6)
+generated, transforms, chords = t.circular()
 ```
 
 ## MUSICAL EXAMPLES
