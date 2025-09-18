@@ -14,3 +14,9 @@ TODO
 ```python
 # TODO
 ```
+
+## SEE ALSO
+
+https://metacpan.org/pod/Music::NeoRiemannianTonnetz
+
+https://en.wikipedia.org/wiki/Neo-Riemannian_theory

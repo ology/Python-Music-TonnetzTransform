@@ -241,5 +241,25 @@ class TestTransform(unittest.TestCase):
         self.assertEqual(len(got), 4)
         self.assertEqual(got, [[60,64,67,70],[61,64,67,69],[60,64,67,70],[61,64,66,70]])
 
+    def test_transformation(self):
+        t = Transform(format='ISO', transforms=['R','L','P'])
+        rlp = t.generate()[0]
+        self.assertEqual(rlp, [['C4', 'E4', 'A4'], ['C4', 'F4', 'A4'], ['C4', 'F4', 'G#4']])
+        t = Transform(format='ISO', transforms=['L','P','R'])
+        lpr = t.generate()[0]
+        self.assertEqual(lpr, [['B3', 'E4', 'G4'], ['B3', 'E4', 'G#4'], ['C#4', 'E4', 'G#4']])
+        t = Transform(format='ISO', transforms=['L','P','L'])
+        lpl = t.generate()[0]
+        self.assertEqual(lpl, [['B3', 'E4', 'G4'], ['B3', 'E4', 'G#4'], ['B3', 'Eb4', 'G#4']])
+        t = Transform(format='ISO', transforms=['N'])
+        n = t.generate()[0]
+        self.assertEqual(n[0], rlp[-1])
+        t = Transform(format='ISO', transforms=['S'])
+        s = t.generate()[0]
+        self.assertEqual(s[0], lpr[-1])
+        t = Transform(format='ISO', transforms=['H'])
+        h = t.generate()[0]
+        self.assertEqual(h[0], lpl[-1])
+
 if __name__ == '__main__':
   unittest.main()
