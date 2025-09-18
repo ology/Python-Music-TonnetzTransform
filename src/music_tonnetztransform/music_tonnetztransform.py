@@ -1,3 +1,4 @@
+from itertools import permutations
 from music21 import note, pitch
 import random
 import re
@@ -29,8 +30,8 @@ class Transform:
         self.allowed = allowed if allowed is not None else ['T', 'N']
         self.transforms = transforms
         self.verbose = verbose
-        self.nrt = Tonnetz(verbose=verbose)
-        self.mdt = Device(verbose=verbose)
+        self.nrt = Tonnetz()
+        self.mdt = Device(scale_note=base_note, verbose=verbose)
         self.base_chord = self._build_base_chord()
 
     def _build_base_chord(self):
@@ -69,7 +70,6 @@ class Transform:
                 else:
                     alphabet = ['P', 'R', 'L']
                     transforms += alphabet
-                    from itertools import permutations
                     transforms += [ ''.join(p) for p in permutations(alphabet, 2) ]
                     transforms += [ ''.join(p) for p in permutations(alphabet, 3) ]
             return [ random.choice(transforms) for _ in range(self.transforms) ]
@@ -118,6 +118,8 @@ class Transform:
             generated.append(note_names if self.format == 'ISO' else transformed)
             chords.append(chord)
             notes = transformed
+        if self.verbose:
+            print("Generate:", generated)
         return generated, transforms, chords
 
     def circular(self):
@@ -135,4 +137,6 @@ class Transform:
             chords.append(chord)
             notes = transformed
             posn = posn + 1 if self._rand_bool() else posn - 1
+        if self.verbose:
+            print("Circular:", generated)
         return generated, transforms, chords
