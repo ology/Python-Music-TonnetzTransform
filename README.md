@@ -11,7 +11,7 @@ Calling the `generate()` and `circular()` methods returns three lists:
 2. The transformations used in the generation
 3. The list of pitch names, comprising the chords that were generated
 
-The `generate()` method generates a *linear* series of transformed chords.
+The `generate()` method generates a *linear* series of transformed chords, from beginning to end.
 
 The `circular()` method generates a *circular* series of transformed chords. This describes movement around a circular list ("necklace") of chord transformations. Starting at position zero, we move randomly, forward or backward along the necklace, transforming the current chord.
 
