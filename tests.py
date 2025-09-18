@@ -200,7 +200,9 @@ class TestNeoRiemannianTonnetz(unittest.TestCase):
 
 class TestTransform(unittest.TestCase):
     def test_defaults(self):
-        t = Transform()
+        t = Transform(format="ISO")
+        # x,y,z = t.generate()
+        # print(y)
         self.assertEqual(t.base_chord, [60, 64, 67])
 
     def test_generate_default(self):
