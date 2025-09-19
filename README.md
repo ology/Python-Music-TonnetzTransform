@@ -121,8 +121,8 @@ for _ in range(2):
         g.tonic = i == 0 # only start on the tonic if on the 1st motif
         g.resolve = i == len(motif) - 1 # only end with the tonic on the last motif
         phrase = g.generate()
-        for i,dura in enumerate(motif):
-            c = chord.Chord(phrase[i])
+        for j,dura in enumerate(motif):
+            c = chord.Chord(phrase[j])
             c.duration = duration.Duration(dura)
             p.append(c)
 
