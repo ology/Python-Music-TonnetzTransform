@@ -265,6 +265,17 @@ class TestTransform(unittest.TestCase):
         h = t.generate()[0]
         self.assertEqual(h[0], lpl[-1])
 
+    def test_base_chord(self):
+        t = Transform(format='ISO', base_chord=['C4','E4','G4'], transforms=['R'])
+        got = t.generate()[0]
+        self.assertEqual(got, [['C4','E4','A4']])
+        t = Transform(format='ISO', base_chord=['C4','E4','G4'], transforms=['L'])
+        got = t.generate()[0]
+        self.assertEqual(got, [['B3','E4','G4']])
+        t = Transform(format='ISO', base_chord=['C4','E4','G4'], transforms=['P'])
+        got = t.generate()[0]
+        self.assertEqual(got, [['C4','Eb4','G4']])
+
     # def test_example(self):
     #     from music21 import duration, chord, stream
     #     from random_rhythms import Rhythm

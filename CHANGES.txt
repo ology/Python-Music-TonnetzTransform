@@ -1,3 +1,6 @@
+0.1.5 2025-09-18
+    - Add the base_chord attribute to be set.
+
 0.1.4 2025-09-18
     - Update musical example.
 

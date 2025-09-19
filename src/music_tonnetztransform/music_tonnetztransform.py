@@ -13,6 +13,7 @@ class Transform:
         self,
         base_note='C',
         base_octave=4,
+        base_chord=None,
         chord_quality='', # '': major, 'm': minor, '7': ...
         format='midinum', # or ISO for names
         semitones=7, # transposition semitones
@@ -32,17 +33,26 @@ class Transform:
         self.verbose = verbose
         self.nrt = Tonnetz()
         self.mdt = Device(scale_note=base_note, verbose=verbose)
-        self.base_chord = self._build_base_chord()
+        self.base_chord = self._build_base_chord(base_chord)
 
-    def _build_base_chord(self):
-        if self.chord_quality == 'm':
-            intervals = [0, 3, 7]
-        elif self.chord_quality == '7':
-            intervals = [0, 4, 7, 10]
+    def _build_base_chord(self, base_chord=None):
+        if not base_chord:
+            if self.chord_quality == 'm':
+                intervals = [0, 3, 7]
+            elif self.chord_quality == '7':
+                intervals = [0, 4, 7, 10]
+            else:
+                intervals = [0, 4, 7]
+            base_midi = self._note_to_midi(self.base_note, self.base_octave)
+            return [ base_midi + i for i in intervals ]
         else:
-            intervals = [0, 4, 7]
-        base_midi = self._note_to_midi(self.base_note, self.base_octave)
-        return [ base_midi + i for i in intervals ]
+            if self.format == "ISO":
+                midi_nums = []
+                for note in base_chord:
+                    midi_nums.append(self._note_to_midi(note))
+                return midi_nums
+            else:
+                return base_chord
 
     def _note_to_midi(self, note, octave=None):
         if not octave:

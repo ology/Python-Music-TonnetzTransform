@@ -20,8 +20,9 @@ The `circular()` method generates a *circular* series of transformed chords. Thi
 from music_tonnetztransform import Transform
 
 t = Transform( # defaults:
-    base_note='C',
-    base_octave=4,
+    base_note='C', # used to construct the base_chord, if not given
+    base_octave=4, # "
+    base_chord=None, # set as a list of midi numbers or named notes
     chord_quality='', # '': major, 'm': minor, '7': 7th
     format='midinum', # or ISO for names
     semitones=7, # transposition semitones
@@ -102,9 +103,6 @@ p = stream.Part()
 r = Rhythm(durations=[1, 3/2, 2])
 motifs = [ r.motif() for _ in range(3) ]
 
-t = Transform(max=len(motifs[0]), verbose=True)
-generated = t.circular()[0]
-
 g = Generator(
     net={
         1: [3,4,5,6],
@@ -127,6 +125,14 @@ for _ in range(2):
             c = chord.Chord(phrase[i])
             c.duration = duration.Duration(dura)
             p.append(c)
+
+    t = Transform(
+        format='ISO', # using named notes
+        base_chord=phrase[-1], # last chord of the previous phrase
+        max=len(motifs[0]), # number of durations in the first motif
+        verbose=True,
+    )
+    generated = t.circular()[0]
 
     for i,dura in enumerate(motifs[0]):
         c = chord.Chord(generated[i])
