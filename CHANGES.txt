@@ -1,3 +1,6 @@
+0.1.7 2025-10-04
+    - Remove itertools from project deps. Oof
+
 0.1.6 2025-09-23
     - Add the missing dependencies to the project. Oof
 
